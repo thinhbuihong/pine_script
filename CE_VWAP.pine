@@ -3,7 +3,23 @@
 
 indicator('Chandelier Exit + VWAP', overlay=true)
 
-// --- Chandelier Exit Code ---
+// Calculate EMAs using built-in ta.ema function
+ema1 = ta.ema(close, 25)
+ema2 = ta.ema(close, 50)
+ema3 = ta.ema(close, 100)
+
+// Define EMA colors (optional)
+col1 = color.white  // EMA 25
+col2 = color.purple  // EMA 50
+col3 = color.blue   // EMA 150
+
+// Plot EMAs with clear and consistent styling
+plot(ema1, title="EMA 25", linewidth=2, color=col1)
+plot(ema2, title="EMA 50", linewidth=2, color=col2)
+plot(ema3, title="EMA 100", linewidth=2, color=col3)
+
+//----------------- --- Chandelier Exit Code -------------------------
+filter = input.bool(title='Filter', defval=true)
 
 var string calcGroup = 'Chandelier Exit Settings'
 length = input.int(title='ATR Period', defval=1, group=calcGroup)
@@ -33,9 +49,13 @@ dir := close > shortStopPrev ? 1 : close < longStopPrev ? -1 : dir
 
 var color longColor = color.green
 var color shortColor = color.red
+// var color longFillColor = color.new(color.green, 90)
+// var color shortFillColor = color.new(color.red, 90)
 var color textColor = color.new(color.white, 0)
 
+// longStopPlot = plot(dir == 1 ? longStop : na, title='Long Stop', style=plot.style_linebr, linewidth=2, color=color.new(longColor, 0))
 buySignal = dir == 1 and dir[1] == -1
+
 sellSignal = dir == -1 and dir[1] == 1
 
 // Khai báo kiểu dữ liệu cho các biến có thể nhận giá trị 'na'
@@ -47,7 +67,7 @@ alertcondition(dir != dir[1] and await, title='Alert: CE Direction Change', mess
 alertcondition(buySignal and await, title='Alert: CE Buy', message='Chandelier Exit Buy!')
 alertcondition(sellSignal and await, title='Alert: CE Sell', message='Chandelier Exit Sell!')
 
-// --- VWAP Code ---
+// ------------------------- VWAP Code --------------------------------
 
 var string vwapGroup = 'VWAP Settings'
 hideonDWM = input(false, title="Hide VWAP on 1D or Above", group=vwapGroup)
@@ -95,7 +115,7 @@ if not (hideonDWM and timeframe.isdwm)
     upperBandValue1 := vwapCalc + bandBasis * bandMult_1
     lowerBandValue1 := vwapCalc - bandBasis * bandMult_1
 
-plot(vwapValue, title="VWAP", color=#2962FF, offset=offset, linewidth = 2)
+plot(vwapValue, title="VWAP", color=color.rgb(217, 217, 28), offset=offset, linewidth = 2, style = plot.style_circles)
 
-plotshape(buySignal and showLabels and close > vwapValue ? longStop : na, title='Buy Label', text='Buy', location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(longColor, 0), textcolor=textColor)
-plotshape(sellSignal and showLabels and close < vwapValue? shortStop : na, title='Sell Label', text='Sell', location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.new(shortColor, 0), textcolor=textColor)
+plotshape(buySignal and showLabels and (filter == false or close > vwapValue) ? longStop : na, title='Buy Label', text='Buy', location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(longColor, 0), textcolor=textColor)
+plotshape(sellSignal and showLabels and (filter == false or close < vwapValue) ? shortStop : na, title='Sell Label', text='Sell', location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.new(shortColor, 0), textcolor=textColor)
