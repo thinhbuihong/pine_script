@@ -1,5 +1,5 @@
 //@version=5
-indicator("QQE", shorttitle="QQE v5", overlay=true)
+indicator("QQE v5", shorttitle="QQE v5")
 
 src = close
 Fast = input.float(2.618, title="Fast Factor")
@@ -15,9 +15,7 @@ WiMA(src, length) =>
 RSIndex = ta.ema(ta.rsi(close, RSI), SF)
 
 // Smoothed ATR of Smoothed RSI
-TH = RSIndex[1] > RSIndex ? RSIndex[1] : RSIndex
-TL = RSIndex[1] < RSIndex ? RSIndex[1] : RSIndex
-TR = TH - TL
+TR = math.abs(RSIndex - RSIndex[1])
 
 AtrRsi = WiMA(TR, 14)
 SmoothedAtrRsi = WiMA(AtrRsi, 14)
