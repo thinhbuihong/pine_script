@@ -1,0 +1,22 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ATSpain
+
+//@version=5
+indicator(title="Multiple RSI Lengths", shorttitle="RSIx4", format=format.price, precision=2)
+
+len1 = input.int(25, minval=1, title="Length 1")
+len2 = input.int(100, minval=1, title="Length 2")
+
+src = input.source(close, "Source")
+
+up1 = ta.rma(math.max(ta.change(src), 0), len1)
+down1 = ta.rma(-math.min(ta.change(src), 0), len1)
+up2 = ta.rma(math.max(ta.change(src), 0), len2)
+down2 = ta.rma(-math.min(ta.change(src), 0), len2)
+
+rsi1 = down1 == 0 ? 100 : up1 == 0 ? 0 : 100 - (100 / (1 + up1 / down1))
+rsi2 = down2 == 0 ? 100 : up2 == 0 ? 0 : 100 - (100 / (1 + up2 / down2))
+
+plot(rsi1, title="RSI 1", color=color.red, linewidth=1)
+plot(rsi2, title="RSI 2", color=color.white, linewidth=2)
+

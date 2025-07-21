@@ -3,8 +3,37 @@
 
 indicator('Chandelier Exit + VWAP', overlay=true)
 
+// ==== Session Highlight Inputs ====
+var string sessionGroup = 'Session Highlight'
+sessionStartHour = input.int(12, title='Session Start Hour', minval=0, maxval=23, group=sessionGroup)
+sessionStartMinute = input.int(0, title='Session Start Minute', minval=0, maxval=59, group=sessionGroup)
+sessionEndHour = input.int(23, title='Session End Hour', minval=0, maxval=23, group=sessionGroup)
+sessionEndMinute = input.int(0, title='Session End Minute', minval=0, maxval=59, group=sessionGroup)
+sessionColor = input.color(color.new(color.orange, 85), title='Session Background Color', group=sessionGroup)
+
+// ==== Session Highlight Logic ====
+var string tz = "GMT+7"  // Đổi lại nếu cần
+session_start = timestamp(tz, year, month, dayofmonth, sessionStartHour, sessionStartMinute)
+session_end   = timestamp(tz, year, month, dayofmonth, sessionEndHour, sessionEndMinute)
+in_session = (time >= session_start and time < session_end)
+bgcolor(in_session ? sessionColor : na)
+
 //----------------- --- Chandelier Exit Code -------------------------
 filter = input.bool(title='Filter', defval=true)
+
+// --- RSI Filter Settings ---
+var string rsiGroup = 'RSI Filter'
+useRSIFilter = input.bool(true, title='Enable RSI Filter', group=rsiGroup)
+rsiLen = 25
+rsiSrc = close
+rsiLenFast = 25
+rsiLenSlow = 100
+up_rsi_fast = ta.rma(math.max(ta.change(rsiSrc), 0), rsiLenFast)
+down_rsi_fast = ta.rma(-math.min(ta.change(rsiSrc), 0), rsiLenFast)
+rsiFast = down_rsi_fast == 0 ? 100 : up_rsi_fast == 0 ? 0 : 100 - (100 / (1 + up_rsi_fast / down_rsi_fast))
+up_rsi_slow = ta.rma(math.max(ta.change(rsiSrc), 0), rsiLenSlow)
+down_rsi_slow = ta.rma(-math.min(ta.change(rsiSrc), 0), rsiLenSlow)
+rsiSlow = down_rsi_slow == 0 ? 100 : up_rsi_slow == 0 ? 0 : 100 - (100 / (1 + up_rsi_slow / down_rsi_slow))
 
 var string calcGroup = 'Chandelier Exit Settings'
 length = input.int(title='ATR Period', defval=1, group=calcGroup)
@@ -39,9 +68,9 @@ var color shortColor = color.red
 var color textColor = color.new(color.white, 0)
 
 // longStopPlot = plot(dir == 1 ? longStop : na, title='Long Stop', style=plot.style_linebr, linewidth=2, color=color.new(longColor, 0))
-buySignal = dir == 1 and dir[1] == -1
-
-sellSignal = dir == -1 and dir[1] == 1
+// Apply RSI filter: previous 2 candles' RSI 25 < RSI 100 for buy, > RSI 100 for sell
+buySignal = dir == 1 and dir[1] == -1 and (not useRSIFilter or (rsiFast[1] < rsiSlow[1] and rsiFast[2] < rsiSlow[2]))
+sellSignal = dir == -1 and dir[1] == 1 and (not useRSIFilter or (rsiFast[1] > rsiSlow[1] and rsiFast[2] > rsiSlow[2]))
 
 // Khai báo kiểu dữ liệu cho các biến có thể nhận giá trị 'na'
 color longStateFillColor = na
